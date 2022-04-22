@@ -81,19 +81,24 @@ class ShareReceiveActivity : AppCompatActivity() {
                 val resultCode = intent.getIntExtra("ResultCode", 0)
                 intent.putExtra(Intent.EXTRA_TEXT, content)
                 setResult(resultCode, intent)
+                this.finish()
             }
         }
-        this.finish()
     }
 
     private fun makeShare(url: String, mimeType: String) {
+        val title = if (url.length > 32) {
+            url.substring(0, 32) + "..."
+        } else {
+            url
+        }
         val share = Intent.createChooser(Intent().apply {
             action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, url)
             type = mimeType
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-        }, null)
-        startActivity(share)
+            putExtra(Intent.EXTRA_TEXT, url)
+        }, title)
+        startActivityForResult(share, 1)
     }
 
     private fun readAssetsConfigFile(): ConfigFile {
@@ -106,5 +111,10 @@ class ShareReceiveActivity : AppCompatActivity() {
             line = bufferedReader.readLine()
         }
         return ConfigFile.readFromTomlText(fileContent.toString())
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        //this.finish()
     }
 }

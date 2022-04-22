@@ -1,0 +1,41 @@
+[rule_configuration]
+webview_pre_execute = ''
+
+[[rules]]
+regex = 'https:\/\/twitter\.com\/[a-zA-Z0-9\-_.]+\/status\/\d+\/?\?([a-zA-Z]+=[0-9a-zA-Z\-_]+&?)+'
+action = 'CLEAR_ALL_PARAM'
+
+[[rules]]
+regex = '(https?:\/\/)?b23.tv\/[a-zA-Z0-9]+'
+action = 'WEB_VIEW'
+javascript = '''
+document.onUrlPreLoad = (url) => {
+    if (url.indexOf('b23.tv') !== -1) {
+        control.changeAllowLoadUrl();
+        location.href = url;
+        return;
+    }
+    control.completion(url.split('?')[0])
+}
+'''
+
+
+[[rules]]
+regex = '(https?:\/\/)?m.tb.cn\/[a-zA-Z0-9_\.\-]+(\?[a-zA-Z0-9_\.\-]+=[a-zA-Z0-9_\.\-]+)?'
+action = 'WEB_VIEW'
+javascript = '''
+document.onUrlPreLoad = (url) => {
+    if (url.indexOf('m.tb.cn') !== -1) {
+        control.changeAllowLoadUrl();
+        location.href = url.split('?')[0];
+        return;
+    }
+    if (url.indexOf('a.m.taobao.com') !== -1) {
+        control.completion(
+            'https://item.taobao.com/item.htm?id=' +
+            url.substring(url.indexOf('i') + 1, url.indexOf('.htm'))
+        );
+        return;
+    }
+}
+'''

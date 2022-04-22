@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">NoTrackURL</string>
+    <string name="text_paste_and_clean">Paste and Clean</string>
+    <string name="text_copy">Copy</string>
+    <string name="text_share">Share</string>
+    <string name="text_copied">Copied</string>
+    <string name="text_no_data_in_clipboard">No data in clipboard</string>
+    <string name="text_script_execute_failed">Script execute failed.</string>
+</resources>

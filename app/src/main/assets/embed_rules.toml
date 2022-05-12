@@ -1,41 +1,108 @@
 [rule_configuration]
 webview_pre_execute = ''
+common_track_args = [
+    '^utm_[a-zA-Z0-9_]+$',
+    '^spm(_[a-zA-Z0-9_]+)?$'
+]
 
 [[rules]]
-regex = 'https:\/\/twitter\.com\/[a-zA-Z0-9\-_.]+\/status\/\d+\/?\?([a-zA-Z]+=[0-9a-zA-Z\-_]+&?)+'
-action = 'CLEAR_ALL_PARAM'
+regex = '(https?:\/\/)?t\.cn\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
 
 [[rules]]
-regex = '(https?:\/\/)?b23.tv\/[a-zA-Z0-9]+'
-action = 'WEB_VIEW'
-javascript = '''
-document.onUrlPreLoad = (url) => {
-    if (url.indexOf('b23.tv') !== -1) {
-        control.changeAllowLoadUrl();
-        location.href = url;
-        return;
-    }
-    control.completion(url.split('?')[0])
-}
-'''
+regex = '(https?:\/\/)?dwz\.cn\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
 
+[[rules]]
+regex = '(https?:\/\/)?t\.co\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?bit\.ly\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?goo\.gl\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?g\.co\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?aka\.ms\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?go\.microsoft\.com\/fwlink\/\?linkid=\d+(&[a-zA-Z0-9\-\.\+\/_%&=~]+)?'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?trib.al\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?b23.tv\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
+action = 'SHORT_LINK'
 
 [[rules]]
 regex = '(https?:\/\/)?m.tb.cn\/[a-zA-Z0-9_\.\-]+(\?[a-zA-Z0-9_\.\-]+=[a-zA-Z0-9_\.\-]+)?'
+action = 'SHORT_LINK'
+
+[[rules]]
+regex = '(https?:\/\/)?item(\.m)?\.taobao\.com\/item\.htm\?[a-zA-Z0-9\-\.\+\/_%&=~]+'
+action = 'PARAM_WHITELIST'
+params = [
+    'id'
+]
+
+[[rules]]
+regex = '(https?:\/\/)?h5\.m\.taobao\.com\/awp\/core\/detail\.htm\?[a-zA-Z0-9\-\.\+\/_%&=~]+'
+action = 'PARAM_WHITELIST'
+params = [
+    'id'
+]
+
+[[rules]]
+regex = '(https?:\/\/)?a\.m\.taobao\.com\/i\d+\.htm\?[a-zA-Z0-9\-\.\+\/_%&=~]+'
 action = 'WEB_VIEW'
 javascript = '''
 document.onUrlPreLoad = (url) => {
-    if (url.indexOf('m.tb.cn') !== -1) {
-        control.changeAllowLoadUrl();
-        location.href = url.split('?')[0];
-        return;
-    }
-    if (url.indexOf('a.m.taobao.com') !== -1) {
-        control.completion(
-            'https://item.taobao.com/item.htm?id=' +
-            url.substring(url.indexOf('i') + 1, url.indexOf('.htm'))
-        );
-        return;
-    }
+    control.completion(
+        'https://item.taobao.com/item.htm?id=' +
+        originalUrl.substring(originalUrl.indexOf('i') + 1, originalUrl.indexOf('.htm'))
+    );
 }
 '''
+
+[[rules]]
+regex = 'https:\/\/twitter\.com\/[a-zA-Z0-9\-_.]+\/status\/\d+\/?\?([a-zA-Z]+=[0-9a-zA-Z\-_]+&?)+'
+action = 'PARAM_WHITELIST'
+params = [
+    'p'
+]
+
+
+[[rules]]
+regex = '(https?:\/\/)?(www\.)bilibili\.com\/video\/[a-zA-Z0-9]+(\?[a-zA-Z0-9\-\.\+\/_%&=~]+)?'
+action = 'PARAM_WHITELIST'
+params = [
+    'p'
+]
+
+[[rules]]
+regex = '(https?:\/\/)?mp\.weixin\.qq\.com\/s\?[a-zA-Z0-9\-\.\+\/_%&=~]+'
+action = 'PARAM_WHITELIST'
+params = [
+    '__biz',
+    'mid',
+    'idx',
+    'sn'
+]
+
+[[rules]]
+regex = '(https?:\/\/)?[0-9a-zA-Z]+(\.m)?\.youzan\.com\/wscshop\/showcase\/feature\?[a-zA-Z0-9\-\.\+\/_%&=~]+'
+action = 'PARAM_WHITELIST'
+params = [
+    'alias'
+]

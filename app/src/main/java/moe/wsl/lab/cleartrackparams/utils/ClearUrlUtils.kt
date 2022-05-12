@@ -3,10 +3,9 @@ package moe.wsl.lab.cleartrackparams.utils
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import android.util.Log
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.webkit.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import moe.wsl.lab.cleartrackparams.BuildConfig
@@ -33,6 +32,9 @@ class ClearUrlUtils(
             val query = url.query
             val pairs = query.split("&").toTypedArray()
             for (pair in pairs) {
+                if (pair.isEmpty()) {
+                    continue
+                }
                 val idx = pair.indexOf("=")
                 queryPairs[pair.substring(0, idx)] = pair.substring(idx + 1)
             }
@@ -61,13 +63,14 @@ class ClearUrlUtils(
                     }
                 }
                 if (isBlacklist && !isExisted || !isBlacklist && isExisted) {
-                    queryParamsString.append("${it.key}=${it.value}")
+                    queryParamsString.append("${it.key}=${it.value}&")
                 }
             }
             if (queryParamsString.isEmpty()) {
                 return urlBase
             }
-            return urlBase + queryParamsString.toString()
+
+            return "$urlBase?${queryParamsString.substring(0, queryParamsString.length - 1)}"
         }
     }
 
@@ -80,7 +83,9 @@ class ClearUrlUtils(
 
     // ------ START CLEAN JOB STATE AREA ------
     private var originUrl = ""
+    private var firstLoadUrl = ""
     private var allowLoadUrl = false
+    private var isFirstLoad = true
     private var text = ""
     private var matches: Sequence<MatchResult> = sequence {  }
     private var currentUrlItem: UrlItem? = null
@@ -91,7 +96,9 @@ class ClearUrlUtils(
 
     private fun clearState() {
         originUrl = ""
+        firstLoadUrl = ""
         allowLoadUrl = false
+        isFirstLoad = false
         text = ""
         matches = sequence {  }
         currentUrlItem = null
@@ -103,69 +110,108 @@ class ClearUrlUtils(
 
     private val webViewClient = object : WebViewClient() {
 
-        override fun shouldOverrideUrlLoading(view: WebView?, urlNewString: String?): Boolean {
-            var realUrl = urlNewString
-            if (!allowLoadUrl) {
-                realUrl = paddingHtmlFile
-                originUrl = urlNewString.toString()
+        var isUrlStartLoad = false
+
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                shouldOverrideUrlLoading(webView, request.url.toString())
+            } else {
+                return true
             }
-            if (realUrl == "about:blank") {
-                realUrl = paddingHtmlFile
+        }
+        override fun shouldOverrideUrlLoading(view: WebView, urlNewString: String): Boolean {
+            //Log.d("urlNewString", urlNewString)
+            if (allowLoadUrl) {
+                return false
             }
-            webView.loadUrl(realUrl!!)
+            if (urlNewString.startsWith(paddingHtmlFile)) {
+                return false
+            }
+            originUrl = urlNewString
+            val paddingUrl = paddingHtmlFile + "?newUrl=" + java.net.URLEncoder.encode(urlNewString, "utf-8")
+            //Log.d("Padding url", paddingUrl)
+            view.loadUrl(paddingUrl)
             return true
         }
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
-            val urlItem = currentUrlItem
-            if (urlItem?.javascript == null) {
-                return
+            isUrlStartLoad = true
+            val realUrl = url.toString()
+            //Log.d("Url Loading", realUrl)
+            val urlItem = currentUrlItem ?: return
+            val script = when (urlItem.action) {
+                ClearAction.SHORT_LINK -> {
+                    "document.onUrlPreLoad = (url) => {\n" +
+                    "    if (url === originalUrl) {\n" +
+                    "        control.changeAllowLoadUrl();\n" +
+                    "        location.href = url;\n" +
+                    "        return;\n" +
+                    "    }\n" +
+                    "    control.completion(url);\n" +
+                    "}"
+                }
+                else -> {
+                    urlItem.javascript
+                }
             }
+            //Log.d("script", script.toString())
             view.evaluateJavascript(
                 "(function () { var _controlObject = clearUrlUtils;" +
                         "var controlPassword = '$controlPassword';" +
+                        "var originalUrl = " + Json.encodeToString(firstLoadUrl) + '\n' +
                         "var control = {" +
-                        "changeAllowLoadUrl: function() {_controlObject.changeAllowLoadUrl(controlPassword)}," +
-                        "changeNextUrl: function(url) {_controlObject.changeNextUrl(controlPassword, url)}," +
-                        "completion: function(result) {_controlObject.completion(controlPassword, result)}," +
-                        "error: function(message) {_controlObject.error(controlPassword, message)}," +
-                        "cleanUrlParams: function(url, keywords, isBlacklist) {_controlObject.cleanUrlParams(url, keywords, isBlacklist)}," +
-                        "getVersion: function() {_controlObject.getVersion()}," +
+                        "changeAllowLoadUrl: function() {return _controlObject.changeAllowLoadUrl(controlPassword)}," +
+                        "changeNextUrl: function(url) {return controlObject.changeNextUrl(controlPassword, url)}," +
+                        "completion: function(result) {return _controlObject.completion(controlPassword, result)}," +
+                        "error: function(message) {return _controlObject.error(controlPassword, message)}," +
+                        "cleanUrlParams: function(url, keywords, isBlacklist) {return _controlObject.cleanUrlParams(url, keywords, isBlacklist)}," +
+                        "getVersion: function() {return _controlObject.getVersion()}," +
                         "};" +
                         "document.clearUrlUtils = undefined;" +
                         "try {" +
                         config.rule_configuration.webview_pre_execute +
                         "} catch (e) { control.error(e.stack); }" +
                         "try {" +
-                        urlItem.javascript +
+                        script +
                         "} catch (e) { control.error(e.stack); }" +
-                        "\n})()"
+                        "})()"
             ) {}
-            Log.d(LOG_TAG, "Current url: $url, Origin url: $originUrl, isAllowLoadUrl: $allowLoadUrl")
-            if (url == paddingHtmlFile) {
+            // Log.d(LOG_TAG, "Current url: $realUrl, Origin url: $originUrl, isAllowLoadUrl: $allowLoadUrl")
+            if (realUrl.startsWith(paddingHtmlFile)) {
                 view.evaluateJavascript("if (document.onUrlPreLoad) {document.onUrlPreLoad('$originUrl')}") {}
-                view.evaluateJavascript(
-                    "document.getElementById('matched_regex').innerHTML = " +
-                            Json.encodeToString(urlItem.regex) +
-                            ";document.getElementById('pre_webview_script').innerHTML = " +
-                            Json.encodeToString(config.rule_configuration.webview_pre_execute) +
-                            ";document.getElementById('rule_script').innerHTML = " +
-                            Json.encodeToString(urlItem.javascript)
-                ) {}
             } else {
                 view.evaluateJavascript("if (document.onUrlLoad) {document.onUrlLoad('$originUrl')}") {}
             }
             super.onPageStarted(view, url, favicon)
         }
 
+        private fun generateSetInnerHtmlScript(keyword: String, content: String?): String {
+            return "try { document.getElementById('$keyword').innerHTML = " +
+                    Json.encodeToString(content) +
+                    " } catch (e) { console.log(e); };"
+        }
+
         override fun onPageFinished(view: WebView, url: String) {
-            view.evaluateJavascript("if (document.onUrlLoadFinish) {document.onUrlLoadFinish('$originUrl')}") {}
+            val urlItem = currentUrlItem ?: return
+            if (url == paddingHtmlFile) {
+                view.evaluateJavascript(
+                    generateSetInnerHtmlScript("current_url", originUrl) +
+                            generateSetInnerHtmlScript("pre_webview_script", config.rule_configuration.webview_pre_execute)+
+                            generateSetInnerHtmlScript("matched_regex", urlItem.regex) +
+                            generateSetInnerHtmlScript("rule_script", urlItem.javascript)
+                ) {}
+            } else {
+                view.evaluateJavascript("if (document.onUrlLoadFinish) {document.onUrlLoadFinish('$originUrl')}") {}
+            }
             super.onPageFinished(view, url)
         }
     }
 
     init {
         webView.settings.javaScriptEnabled = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        }
         webView.webViewClient = webViewClient
         webView.addJavascriptInterface(WebViewJavascriptInterface(this), "clearUrlUtils")
         rules = config.rules
@@ -201,6 +247,7 @@ class ClearUrlUtils(
         val urlItem = matchedUrl.urlItem
         currentUrlItem = urlItem
         originUrl = url
+        firstLoadUrl = url
         when (urlItem.action) {
             ClearAction.CLEAR_ALL_PARAM -> {
                 Log.d(LOG_TAG, "Use CLEAR_ALL_PARAM method.")
@@ -225,6 +272,10 @@ class ClearUrlUtils(
                 Log.d(LOG_TAG, "Use WEB_VIEW method.")
                 webView.loadUrl(url)
             }
+            ClearAction.SHORT_LINK -> {
+                Log.d(LOG_TAG, "Use SHORT_LINK method.")
+                webView.loadUrl(url)
+            }
             else -> callError(NotImplementedError("Unknown action ${urlItem.action}."))
         }
     }
@@ -238,10 +289,54 @@ class ClearUrlUtils(
         cleanUrlsInText()
     }
 
+    private fun cleanCommonTrackParams(url: String): String {
+        val jUrl = URL(url)
+        val port: String = when (jUrl.protocol) {
+            "http" -> if (jUrl.port == 80 || jUrl.port == -1) "" else ":" + jUrl.port
+            "https" -> if (jUrl.port == 443 || jUrl.port == -1) "" else ":" + jUrl.port
+            else -> ""
+        }
+        val urlBase = jUrl.protocol + "://" + jUrl.host + port + jUrl.path
+        if (jUrl.query == null || jUrl.query.isEmpty()) {
+            return urlBase
+        }
+        val queryParamsString = StringBuilder()
+        val queryParams = splitQuery(jUrl)
+        queryParams.forEach {
+            var isExisted = false
+            for (i in config.rule_configuration.common_track_args_pattern) {
+                Log.d("pattern", i.toString())
+                if (i.containsMatchIn(it.key)) {
+                    isExisted = true
+                    break
+                }
+            }
+            if (!isExisted) {
+                queryParamsString.append("${it.key}=${it.value}&")
+            }
+        }
+        if (queryParamsString.isEmpty()) {
+            return urlBase
+        }
+        return "$urlBase?${queryParamsString.substring(0, queryParamsString.length - 1)}"
+    }
+
     /**
      * Internal method, will find a link in text and clean it.
      */
     private fun cleanUrlsInText() {
+        if (cleanedUrl != null) {
+            cleanedUrl = cleanCommonTrackParams(cleanedUrl!!)
+            Log.d("CleanedUrl", cleanedUrl.toString())
+        }
+        if (currentUrlItem != null && currentUrlItem!!.action == ClearAction.SHORT_LINK && cleanedUrl != null) {
+            val url = cleanedUrl.toString()
+            val newUrlMatch = matchUrl(url)
+            if (newUrlMatch != null) {
+                cleanUrl(url)
+                return
+            }
+        }
         if (cleanedUrl != null) {
             val url = cleanedUrl !!
             val match = matches.elementAt(currentMatchPos)
@@ -280,7 +375,7 @@ class ClearUrlUtils(
      * Error callback
      */
     private fun callError(err: Throwable) {
-        Log.d(LOG_TAG, "Clean error: ${err}")
+        Log.d(LOG_TAG, "Clean error: $err")
         try {
             completion.failed(err)
         } catch (e: Throwable) {
@@ -293,6 +388,10 @@ class ClearUrlUtils(
         webView.clearCache(true)
         webView.clearHistory()
         webView.clearFormData()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+        }
     }
 
     /**

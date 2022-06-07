@@ -17,6 +17,7 @@ class CleanFromClipboardActivity : AppCompatActivity() {
     private lateinit var pasteAndCleanButton: Button
     private lateinit var copyButton: Button
     private lateinit var shareButton: Button
+    private lateinit var subscriptionManagerButton: Button
 
     private var cleanResult = ""
 
@@ -29,6 +30,7 @@ class CleanFromClipboardActivity : AppCompatActivity() {
         pasteAndCleanButton = findViewById(R.id.pasteAndCleanButton)
         copyButton = findViewById(R.id.copyButton)
         shareButton = findViewById(R.id.shareButton)
+        subscriptionManagerButton = findViewById(R.id.subscriptionManager)
 
         copyButton.setOnClickListener {
             clipboard!!.setPrimaryClip(ClipData.newPlainText("", cleanResult))
@@ -45,6 +47,13 @@ class CleanFromClipboardActivity : AppCompatActivity() {
                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
             }, null)
             startActivity(share)
+        }
+        subscriptionManagerButton.setOnClickListener {
+            val intent = Intent(
+                this,
+                SubscriptionManagerActivity::class.java
+            )
+            startActivity(intent)
         }
 
         cleanFromClipboard()

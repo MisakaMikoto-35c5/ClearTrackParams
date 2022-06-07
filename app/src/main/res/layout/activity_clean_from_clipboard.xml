@@ -24,6 +24,7 @@
         tools:ignore="SpeakableTextPresentCheck" />
 
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -50,5 +51,22 @@
             android:layout_height="wrap_content"
             android:text="@string/text_share"
             app:layout_constraintTop_toBottomOf="@+id/copyButton" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+
+        <Button
+            android:id="@+id/subscriptionManager"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/text_subscriptions_manager" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

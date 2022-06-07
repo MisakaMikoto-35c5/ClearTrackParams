@@ -2,6 +2,7 @@ package moe.wsl.lab.cleartrackparams.utils.data
 
 import android.util.Log
 import kotlinx.serialization.Serializable
+import java.util.concurrent.RejectedExecutionException
 
 @Serializable
 data class RuleConfiguration(

@@ -7,4 +7,8 @@
     <string name="text_script_execute_failed">脚本执行失败</string>
     <string name="text_paste_and_clean">粘贴并清理</string>
     <string name="text_no_data_in_clipboard">剪切板当中没有数据</string>
+    <string name="text_add">添加</string>
+    <string name="text_subscriptions_manager">订阅管理器</string>
+    <string name="text_fields_can_not_be_empty">输入框不能为空</string>
+    <string name="text_loading">加载中</string>
 </resources>

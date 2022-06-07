@@ -8,6 +8,7 @@ import android.webkit.WebView
 import android.widget.Toast
 import moe.wsl.lab.cleartrackparams.utils.ClearUrlUtils
 import moe.wsl.lab.cleartrackparams.utils.IClearCompletion
+import moe.wsl.lab.cleartrackparams.utils.SubscriptionManager
 import moe.wsl.lab.cleartrackparams.utils.data.ClearAction
 import moe.wsl.lab.cleartrackparams.utils.data.ConfigFile
 import moe.wsl.lab.cleartrackparams.utils.data.JavascriptExecuteException
@@ -16,57 +17,68 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class ShareReceiveActivity : AppCompatActivity() {
-    private lateinit var configFile: ConfigFile
+    private var configFile: ConfigFile? = null
 
-    private lateinit var clearUrlUtils: ClearUrlUtils
+    private var clearUrlUtils: ClearUrlUtils? = null
     private lateinit var webView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_share_receive)
 
+        initTools()
+    }
 
+    private fun initTools() {
+        webView = findViewById<WebView>(R.id.controlWebView)
+        Thread {
+            configFile = SubscriptionManager(this).getMixedRules()
+            runOnUiThread {
+
+                clearUrlUtils = ClearUrlUtils(
+                    configFile!!,
+                    object : IClearCompletion {
+                        override fun completion(content: String) {
+                            handleCompletion(content)
+                        }
+
+                        override fun failed(e: Throwable) {
+                            e.printStackTrace()
+                            e as JavascriptExecuteException
+                            Toast.makeText(
+                                baseContext,
+                                R.string.text_script_execute_failed,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            Log.d("JSERR", e.javascriptErrorMessage.toString())
+                        }
+                    },
+                    this,
+                    webView)
+                onInitFinish()
+            }
+        }.start()
+    }
+
+    private fun onInitFinish() {
         when (intent?.action) {
             Intent.ACTION_SEND -> {
-                initTools()
                 handleSend(intent)
             }
             GlobalValues.INTENT_ACTION_CLEAN_WITH_CALLBACK -> {
-                initTools()
                 cleanWithCallback(intent)
             }
         }
     }
 
-    private fun initTools() {
-        webView = findViewById<WebView>(R.id.controlWebView)
-        configFile = readAssetsConfigFile()
-        clearUrlUtils = ClearUrlUtils(
-            configFile,
-            object : IClearCompletion {
-                override fun completion(content: String) {
-                    handleCompletion(content)
-                }
-
-                override fun failed(e: Throwable) {
-                    e.printStackTrace()
-                    e as JavascriptExecuteException
-                    Toast.makeText(baseContext, R.string.text_script_execute_failed, Toast.LENGTH_SHORT).show()
-                    Log.d("JSERR", e.javascriptErrorMessage.toString())
-                }
-            },
-            this,
-            webView)
-    }
-
     private fun cleanWithCallback(intent: Intent) {
         val content = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
-        clearUrlUtils.cleanUrlsInText(content)
+        clearUrlUtils!!.cleanUrlsInText(content)
     }
 
     private fun handleSend(intent: Intent) {
         val content = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
-        clearUrlUtils.cleanUrlsInText(content)
+        clearUrlUtils!!.cleanUrlsInText(content)
     }
 
     private fun handleCompletion(content: String) {
@@ -99,18 +111,6 @@ class ShareReceiveActivity : AppCompatActivity() {
             putExtra(Intent.EXTRA_TEXT, url)
         }, title)
         startActivityForResult(share, 1)
-    }
-
-    private fun readAssetsConfigFile(): ConfigFile {
-        val fileContent = StringBuilder()
-        val fileStream = assets.open("embed_rules.toml")
-        val bufferedReader = BufferedReader(InputStreamReader(fileStream))
-        var line: String? = bufferedReader.readLine()
-        while (line != null) {
-            fileContent.append(line + '\n')
-            line = bufferedReader.readLine()
-        }
-        return ConfigFile.readFromTomlText(fileContent.toString())
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

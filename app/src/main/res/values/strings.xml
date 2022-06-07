@@ -6,4 +6,8 @@
     <string name="text_copied">Copied</string>
     <string name="text_no_data_in_clipboard">No data in clipboard</string>
     <string name="text_script_execute_failed">Script execute failed.</string>
+    <string name="text_add">Add</string>
+    <string name="text_subscriptions_manager">Subscriptions Manager</string>
+    <string name="text_fields_can_not_be_empty">Fields can\'t be empty.</string>
+    <string name="text_loading">Loading…</string>
 </resources>

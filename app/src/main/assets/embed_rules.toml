@@ -106,3 +106,9 @@ action = 'PARAM_WHITELIST'
 params = [
     'alias'
 ]
+[[rules]]
+regex = '(https?:\/\/)?(m\.)?music.163.com\/[0-9a-zA-Z\/]+\?[a-zA-Z0-9\-\.\+\/_%&=~]+'
+action = 'PARAM_WHITELIST'
+params = [
+    'id'
+]

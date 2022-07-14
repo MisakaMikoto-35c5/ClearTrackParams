@@ -70,6 +70,32 @@ class SubscriptionManager(private val context: Context) {
         subscriptionDao.insertAll(subscription)
     }
 
+    fun updateSubscription(item: Subscription) {
+        val subscriptionDao = getSubscriptionDb().subscriptionDao()
+        val subscriptionContent = getSubscriptionContent(item.subscriptionURL)
+        val configFile = ConfigFile.readFromTomlText(subscriptionContent)
+        if (configFile.rules == null) {
+            throw NullPointerException()
+        }
+        if (configFile.rule_configuration == null) {
+            throw NullPointerException()
+        }
+        if (configFile.rule_configuration.webview_pre_execute == null) {
+            throw NullPointerException()
+        }
+        if (configFile.rule_configuration.common_track_args == null) {
+            throw NullPointerException()
+        }
+        val subscription = Subscription(
+            id = item.id,
+            subscriptionName = item.subscriptionName,
+            subscriptionURL = item.subscriptionURL,
+            lastUpdateAt = System.currentTimeMillis() / 1000L,
+            content = subscriptionContent
+        )
+        subscriptionDao.updateAll(subscription)
+    }
+
     fun getSubscriptionContent(url: String): String {
         val uri = URI(url)
         return when (uri.scheme) {

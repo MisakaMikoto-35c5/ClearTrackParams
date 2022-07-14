@@ -84,7 +84,6 @@ class SubscriptionManagerActivity : AppCompatActivity() {
         val editTextSubscriptionUrl = dialogView.findViewById<EditText>(R.id.editTextSubscriptionUrl)
         dialogBuilder.setView(dialogView)
 
-        dialogBuilder.setTitle("Test")
         dialogBuilder.setPositiveButton(android.R.string.ok, null)
         dialogBuilder.setNegativeButton(android.R.string.cancel, null)
         if (data != null) {
@@ -97,6 +96,9 @@ class SubscriptionManagerActivity : AppCompatActivity() {
                 })
             editTextSubscriptionName.text.append(data.subscriptionName)
             editTextSubscriptionUrl.text.append(data.subscriptionURL)
+            dialogBuilder.setTitle("Edit subscription")
+        } else {
+            dialogBuilder.setTitle("Add subscription")
         }
         val alertDialog: AlertDialog = dialogBuilder.create()
         alertDialog.show()
@@ -119,10 +121,20 @@ class SubscriptionManagerActivity : AppCompatActivity() {
 
             val worker = Thread {
                 try {
-                    subscriptionManager.addSubscription(
-                        name,
-                        url
-                    )
+                    if (data != null) {
+                        subscriptionManager.updateSubscription(Subscription(
+                            data.id,
+                            name,
+                            url,
+                            0,
+                            ""
+                        ))
+                    } else {
+                        subscriptionManager.addSubscription(
+                            name,
+                            url
+                        )
+                    }
                     onDataUpdate()
                     runOnUiThread {
                         progressDialog.dismiss()

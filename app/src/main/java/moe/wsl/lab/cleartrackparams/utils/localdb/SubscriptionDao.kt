@@ -1,9 +1,6 @@
 package moe.wsl.lab.cleartrackparams.utils.localdb
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
+import androidx.room.*
 
 @Dao
 interface SubscriptionDao {
@@ -21,6 +18,9 @@ interface SubscriptionDao {
 
     @Insert
     fun insertAll(vararg users: Subscription)
+
+    @Update
+    fun updateAll(vararg users: Subscription)
 
     @Delete
     fun delete(user: Subscription)

@@ -223,12 +223,13 @@ class ClearUrlUtils(
     private fun matchUrl(url: String): MatchedUrlItem? {
         var matchedUrlItem: UrlItem? = null
         for (i in rules) {
-            if (i.pattern.matches(url)) {
+            if (i.pattern.find(url) != null) {
                 matchedUrlItem = i
                 break
             }
         }
         if (matchedUrlItem != null) {
+            Log.d("MatchedRule", matchedUrlItem.regex.toString())
             return MatchedUrlItem(url, matchedUrlItem)
         }
         return null
@@ -270,7 +271,7 @@ class ClearUrlUtils(
             }
             ClearAction.WEB_VIEW -> {
                 Log.d(LOG_TAG, "Use WEB_VIEW method.")
-                webView.loadUrl(url)
+                webView.loadUrl(paddingHtmlFile)
             }
             ClearAction.SHORT_LINK -> {
                 Log.d(LOG_TAG, "Use SHORT_LINK method.")

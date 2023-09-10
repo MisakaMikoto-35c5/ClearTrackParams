@@ -11,4 +11,5 @@
     <string name="text_subscriptions_manager">订阅管理器</string>
     <string name="text_fields_can_not_be_empty">输入框不能为空</string>
     <string name="text_loading">加载中</string>
+    <string name="text_update_all">更新所有</string>
 </resources>

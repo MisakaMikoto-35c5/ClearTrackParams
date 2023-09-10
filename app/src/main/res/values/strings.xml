@@ -10,4 +10,5 @@
     <string name="text_subscriptions_manager">Subscriptions Manager</string>
     <string name="text_fields_can_not_be_empty">Fields can\'t be empty.</string>
     <string name="text_loading">Loading…</string>
+    <string name="text_update_all">Update All</string>
 </resources>

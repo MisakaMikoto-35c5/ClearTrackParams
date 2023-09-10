@@ -60,6 +60,10 @@ class SubscriptionManagerActivity : AppCompatActivity() {
         findViewById<Button>(R.id.addButton).setOnClickListener {
             showEditSubscriptionDialog()
         }
+
+        findViewById<Button>(R.id.updateAllButton).setOnClickListener {
+            updateAllSubscriptions()
+        }
     }
 
     private fun initTools() {
@@ -163,6 +167,22 @@ class SubscriptionManagerActivity : AppCompatActivity() {
                 worker.start()
             }.start()
         }
+    }
+
+    private fun updateAllSubscriptions() {
+        val progressDialog = ProgressDialog(this@SubscriptionManagerActivity)
+        progressDialog.setTitle(getString(R.string.text_loading))
+        progressDialog.setMessage(getString(R.string.text_loading))
+        progressDialog.show()
+
+        Thread {
+            val errors = subscriptionManager.updateAllRules()
+            Thread.sleep(1000)
+            runOnUiThread {
+                progressDialog.dismiss()
+            }
+        }.start()
+
     }
 
     class SubscriptionManagerRecyclerViewAdapter(private val parent: SubscriptionManagerActivity) :

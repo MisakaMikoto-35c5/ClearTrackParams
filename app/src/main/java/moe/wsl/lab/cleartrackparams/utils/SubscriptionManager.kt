@@ -12,6 +12,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.lang.Exception
 import java.lang.NullPointerException
 import java.lang.StringBuilder
 import java.net.URI
@@ -133,9 +134,31 @@ class SubscriptionManager(private val context: Context) {
         return fileContent.toString()
     }
 
-    fun getMixedRules(): ConfigFile {
+    fun updateAllRules(): Array<Exception> {
+        val errors: ArrayList<Exception> = ArrayList();
         val subscriptionDao = getSubscriptionDb().subscriptionDao()
         val rules = subscriptionDao.getAll()
+        for (i in rules) {
+            try {
+                val subscriptionContent = getSubscriptionContent(i.subscriptionURL)
+                val updatedRule = Subscription(
+                    id = i.id,
+                    subscriptionName = i.subscriptionName,
+                    subscriptionURL = i.subscriptionURL,
+                    lastUpdateAt = System.currentTimeMillis() / 1000L,
+                    content = subscriptionContent
+                )
+                subscriptionDao.updateAll(updatedRule)
+            } catch (exception: Exception) {
+                errors.add(exception)
+            }
+        }
+        return errors.toTypedArray()
+    }
+
+    fun getMixedRules(): ConfigFile {
+        val subscriptionDao = getSubscriptionDb().subscriptionDao()
+        val rules = subscriptionDao.getAll().reversed()
         val webViewPreExecute = StringBuilder()
         val commonTrackArgs = arrayListOf<String>()
         val urlItems = arrayListOf<UrlItem>()

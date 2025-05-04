@@ -46,7 +46,7 @@ regex = '(https?:\/\/)?b23.tv\/[a-zA-Z0-9\?\-\.\+\/_%&=~]+'
 action = 'SHORT_LINK'
 
 [[rules]]
-regex = '(https?:\/\/)?m.tb.cn\/[a-zA-Z0-9_\.\-]+(\?[a-zA-Z0-9_\.\-]+=[a-zA-Z0-9_\.\-]+)?'
+regex = '(https?:\/\/)?[a-z].tb.cn\/[a-zA-Z0-9_\.\-]+(\?[a-zA-Z0-9_\.\-]+=[a-zA-Z0-9_\.\-]+)?'
 action = 'SHORT_LINK'
 
 [[rules]]
@@ -58,6 +58,13 @@ params = [
 
 [[rules]]
 regex = '(https?:\/\/)?h5\.m\.taobao\.com\/awp\/core\/detail\.htm\?[a-zA-Z0-9\-\.\+\/_%&=~]+'
+action = 'PARAM_WHITELIST'
+params = [
+    'id'
+]
+
+[[rules]]
+regex = '(https?:\/\/)?.+\.taobao\.com\/'
 action = 'PARAM_WHITELIST'
 params = [
     'id'
